@@ -33,6 +33,7 @@ variable "project_name" {
 variable "tf_state_bucket" {
   description = "S3 bucket used for Terraform state AND Lambda zip artifact"
   type        = string
+  default     = ""
 }
 
 variable "lambda_zip_key" {
@@ -81,6 +82,8 @@ locals {
 }
 
 resource "aws_lambda_function" "app" {
+  count = var.tf_state_bucket != "" ? 1 : 0
+
   function_name = "${var.project_name}-app"
   role          = aws_iam_role.lambda_exec.arn
 
@@ -106,7 +109,9 @@ resource "aws_lambda_function" "app" {
 # ---------------------------------------------------------------------------
 
 resource "aws_lambda_function_url" "app" {
-  function_name      = aws_lambda_function.app.function_name
+  count = var.tf_state_bucket != "" ? 1 : 0
+
+  function_name      = aws_lambda_function.app[0].function_name
   authorization_type = "NONE"
 
   cors {
@@ -119,9 +124,11 @@ resource "aws_lambda_function_url" "app" {
 }
 
 resource "aws_lambda_permission" "allow_public_url" {
+  count = var.tf_state_bucket != "" ? 1 : 0
+
   statement_id           = "AllowPublicFunctionURL"
   action                 = "lambda:InvokeFunctionUrl"
-  function_name          = aws_lambda_function.app.function_name
+  function_name          = aws_lambda_function.app[0].function_name
   principal              = "*"
   function_url_auth_type = "NONE"
 }
@@ -132,10 +139,10 @@ resource "aws_lambda_permission" "allow_public_url" {
 
 output "function_url" {
   description = "Public Lambda Function URL"
-  value       = aws_lambda_function_url.app.function_url
+  value       = var.tf_state_bucket != "" ? aws_lambda_function_url.app[0].function_url : ""
 }
 
 output "function_name" {
   description = "Lambda function name"
-  value       = aws_lambda_function.app.function_name
+  value       = var.tf_state_bucket != "" ? aws_lambda_function.app[0].function_name : ""
 }
