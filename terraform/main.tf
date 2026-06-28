@@ -41,6 +41,12 @@ variable "lambda_zip_key" {
   default     = ""
 }
 
+variable "public_key" {
+  description = "SSH public key"
+  type        = string
+  default     = ""
+}
+
 # ---------------------------------------------------------------------------
 # IAM role for the Lambda function
 # ---------------------------------------------------------------------------
